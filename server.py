@@ -6,22 +6,6 @@ import sys
 import os
 
 
-# Main
-port_ctrl = 2001
-if len(sys.argv)>1:
-  port_ctrl = int(float(sys.argv[1]))
-port_data = port_ctrl-1
-if len(sys.argv)>2:
-  port_data = int(float(sys.argv[2]))
-print('Starting FTP on {}, {} (data)'.format(port_ctrl, port_data))
-shared = types.SimpleNamespace(server=None)
-addr_ctrl = ('', port_ctrl)
-addr_data = ('', port_data)
-sel_ctrl = selectors.DefaultSelector()
-sel_data = selectors.DefaultSelector()
-tcp_server(addr_ctrl, sel_ctrl, ftpctrl_accept, ftpctrl_service)
-tcp_server(addr_data, sel_data, ftpdata_accept, ftpdata_service)
-
 # Create a TCP server
 def tcp_server(addr, sel, fn_accept, fn_service):
   s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -79,8 +63,13 @@ def ftpctrl_process(data):
       shared.server = data
     elif args[0]=='RETR':
       data.client.end = True
-      if os.path.isfile(args[1]):
-        file_id = open(args[1], 'rb')
+      path = args[1]
+      if path[0:1]=='/':
+        path = path[1:]
+      if len(path)==0:
+        path = 'index.html'
+      if os.path.isfile(path):
+        file_id = open(path, 'rb')
         data.client.outb += file_id.read()
         file_id.close()
         data.outb += b'226 Closing data connection\r\n'
@@ -123,3 +112,20 @@ def ftpdata_service(key, mask):
       print('Closing connection', data.addr)
       sel_data.unregister(conn)
       conn.close()
+
+
+# Main
+port_ctrl = 2001
+if len(sys.argv)>1:
+  port_ctrl = int(float(sys.argv[1]))
+port_data = port_ctrl-1
+if len(sys.argv)>2:
+  port_data = int(float(sys.argv[2]))
+print('Starting FTP on {}, {} (data)'.format(port_ctrl, port_data))
+shared = types.SimpleNamespace(server=None)
+addr_ctrl = ('', port_ctrl)
+addr_data = ('', port_data)
+sel_ctrl = selectors.DefaultSelector()
+sel_data = selectors.DefaultSelector()
+tcp_server(addr_ctrl, sel_ctrl, ftpctrl_accept, ftpctrl_service)
+tcp_server(addr_data, sel_data, ftpdata_accept, ftpdata_service)
