@@ -24,7 +24,7 @@ recv_data = s_ctrl.recv(1024)
 line_end = recv_data.index(b'\r\n')
 line = recv_data[0:line_end].decode('ascii')
 print(line)
-parm = line[line.index('('):line.index(')')].split(',')
+parm = line[line.index('(')+1:line.index(')')].split(',')
 host_data = '.'.join(parm[0:4])
 port_data = int(float(parm[4]))*256+int(float(parm[5]))
 s_data = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -45,7 +45,9 @@ while True:
     data += recv_data
     print('Recieved', len(data), 'bytes ...')
   else:
-    print('\n', data.decode('ascii'))
+    print()
+    print(data.decode('ascii'))
     s_data.close()
     s_ctrl.close()
+    break
     
